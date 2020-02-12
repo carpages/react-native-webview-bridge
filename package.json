@@ -34,7 +34,9 @@
   "main": "webview-bridge",
   "dependencies": {
     "invariant": "2.2.0",
-    "keymirror": "0.1.1",
-    "react-native-webview": "^8.0.6"
+    "keymirror": "0.1.1"
+  },
+  "peerDependencies": {
+    "react-native-webview": "8.x"
   }
 }
