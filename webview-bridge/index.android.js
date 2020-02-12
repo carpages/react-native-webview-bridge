@@ -10,16 +10,18 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule WebViewBridge
+ * @flow
  */
-'use strict';
+"use strict";
 
-var React = require('react');
-var PropTypes = require('prop-types');
-var createReactClass = require('create-react-class');
-var ReactNative = require('react-native');
-var invariant = require('invariant');
-var keyMirror = require('keymirror');
-var resolveAssetSource = require('react-native/Libraries/Image/resolveAssetSource');
+var React = require("react");
+var PropTypes = require("prop-types");
+var createReactClass = require("create-react-class");
+var ReactNative = require("react-native");
+var invariant = require("invariant");
+var keyMirror = require("keymirror");
+var resolveAssetSource = require("react-native/Libraries/Image/resolveAssetSource");
+var { WebView } = require("react-native-webview");
 
 var {
   ReactNativeViewAttributes,
@@ -28,49 +30,47 @@ var {
   StyleSheet,
   Text,
   View,
-  WebView,
   requireNativeComponent,
   DeviceEventEmitter,
-  NativeModules: {
-    WebViewBridgeManager
-  }
+  NativeModules: { WebViewBridgeManager }
 } = ReactNative;
 
-var RCT_WEBVIEWBRIDGE_REF = 'webviewbridge';
+var RCT_WEBVIEWBRIDGE_REF = "webviewbridge";
 
 var WebViewBridgeState = keyMirror({
   IDLE: null,
   LOADING: null,
-  ERROR: null,
+  ERROR: null
 });
 
-var RCTWebViewBridge = requireNativeComponent('RCTWebViewBridge', WebViewBridge);
+var RCTWebViewBridge = requireNativeComponent(
+  "RCTWebViewBridge",
+  WebViewBridge
+);
 
 /**
  * Renders a native WebView.
  */
 var WebViewBridge = createReactClass({
-
   propTypes: {
     ...RCTWebViewBridge.propTypes,
 
     /**
      * Will be called once the message is being sent from webview
      */
-    onBridgeMessage: PropTypes.func,
+    onBridgeMessage: PropTypes.func
   },
 
   getInitialState: function() {
     return {
       viewState: WebViewBridgeState.IDLE,
       lastErrorEvent: null,
-      startInLoadingState: true,
+      startInLoadingState: true
     };
   },
 
-
   componentWillMount: function() {
-    DeviceEventEmitter.addListener("webViewBridgeMessage", (body) => {
+    DeviceEventEmitter.addListener("webViewBridgeMessage", body => {
       const { onBridgeMessage } = this.props;
       const message = body.message;
       if (onBridgeMessage) {
@@ -79,49 +79,60 @@ var WebViewBridge = createReactClass({
     });
 
     if (this.props.startInLoadingState) {
-      this.setState({viewState: WebViewBridgeState.LOADING});
+      this.setState({ viewState: WebViewBridgeState.LOADING });
     }
   },
 
   render: function() {
     var otherView = null;
 
-   if (this.state.viewState === WebViewBridgeState.LOADING) {
+    if (this.state.viewState === WebViewBridgeState.LOADING) {
       otherView = this.props.renderLoading && this.props.renderLoading();
     } else if (this.state.viewState === WebViewBridgeState.ERROR) {
       var errorEvent = this.state.lastErrorEvent;
-      otherView = this.props.renderError && this.props.renderError(
-        errorEvent.domain,
-        errorEvent.code,
-        errorEvent.description);
+      otherView =
+        this.props.renderError &&
+        this.props.renderError(
+          errorEvent.domain,
+          errorEvent.code,
+          errorEvent.description
+        );
     } else if (this.state.viewState !== WebViewBridgeState.IDLE) {
-      console.error('RCTWebViewBridge invalid state encountered: ' + this.state.loading);
+      console.error(
+        "RCTWebViewBridge invalid state encountered: " + this.state.loading
+      );
     }
 
     var webViewStyles = [styles.container, this.props.style];
-    if (this.state.viewState === WebViewBridgeState.LOADING ||
-      this.state.viewState === WebViewBridgeState.ERROR) {
+    if (
+      this.state.viewState === WebViewBridgeState.LOADING ||
+      this.state.viewState === WebViewBridgeState.ERROR
+    ) {
       // if we're in either LOADING or ERROR states, don't show the webView
       webViewStyles.push(styles.hidden);
     }
 
-    var {javaScriptEnabled, domStorageEnabled} = this.props;
+    var { javaScriptEnabled, domStorageEnabled } = this.props;
     if (this.props.javaScriptEnabledAndroid) {
-      console.warn('javaScriptEnabledAndroid is deprecated. Use javaScriptEnabled instead');
+      console.warn(
+        "javaScriptEnabledAndroid is deprecated. Use javaScriptEnabled instead"
+      );
       javaScriptEnabled = this.props.javaScriptEnabledAndroid;
     }
     if (this.props.domStorageEnabledAndroid) {
-      console.warn('domStorageEnabledAndroid is deprecated. Use domStorageEnabled instead');
+      console.warn(
+        "domStorageEnabledAndroid is deprecated. Use domStorageEnabled instead"
+      );
       domStorageEnabled = this.props.domStorageEnabledAndroid;
     }
 
-    let {source, ...props} = {...this.props};
+    let { source, ...props } = { ...this.props };
 
-    var webView =
+    var webView = (
       <RCTWebViewBridge
         ref={RCT_WEBVIEWBRIDGE_REF}
         key="webViewKey"
- 				javaScriptEnabled={true}
+        javaScriptEnabled={true}
         {...props}
         source={resolveAssetSource(source)}
         style={webViewStyles}
@@ -129,7 +140,8 @@ var WebViewBridge = createReactClass({
         onLoadingFinish={this.onLoadingFinish}
         onLoadingError={this.onLoadingError}
         onChange={this.onMessage}
-      />;
+      />
+    );
 
     return (
       <View style={styles.container}>
@@ -141,7 +153,7 @@ var WebViewBridge = createReactClass({
 
   onMessage(event) {
     if (this.props.onBridgeMessage != null && event.nativeEvent != null) {
-      this.props.onBridgeMessage(event.nativeEvent.message)
+      this.props.onBridgeMessage(event.nativeEvent.message);
     }
   },
 
@@ -169,7 +181,7 @@ var WebViewBridge = createReactClass({
     );
   },
 
-  sendToBridge: function (message: string) {
+  sendToBridge: function(message: string) {
     UIManager.dispatchViewManagerCommand(
       this.getWebViewBridgeHandle(),
       UIManager.RCTWebViewBridge.Commands.sendToBridge,
@@ -199,7 +211,7 @@ var WebViewBridge = createReactClass({
 
   onLoadingError: function(event) {
     event.persist(); // persist this event because we need to store it
-    var {onError, onLoadEnd} = this.props;
+    var { onError, onLoadEnd } = this.props;
     onError && onError(event);
     onLoadEnd && onLoadEnd(event);
 
@@ -210,25 +222,24 @@ var WebViewBridge = createReactClass({
   },
 
   onLoadingFinish: function(event) {
-    var {onLoad, onLoadEnd} = this.props;
+    var { onLoad, onLoadEnd } = this.props;
     onLoad && onLoad(event);
     onLoadEnd && onLoadEnd(event);
     this.setState({
-      viewState: WebViewBridgeState.IDLE,
+      viewState: WebViewBridgeState.IDLE
     });
     this.updateNavigationState(event);
-  },
+  }
 });
-
 
 var styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1
   },
   hidden: {
     height: 0,
-    flex: 0, // disable 'flex:1' when hiding a View
-  },
+    flex: 0 // disable 'flex:1' when hiding a View
+  }
 });
 
 module.exports = WebViewBridge;
