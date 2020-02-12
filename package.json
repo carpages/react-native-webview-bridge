@@ -37,6 +37,6 @@
     "keymirror": "0.1.1"
   },
   "peerDependencies": {
-    "react-native-webview": "8.x"
+    "react-native-webview": "7.4.3"
   }
 }
